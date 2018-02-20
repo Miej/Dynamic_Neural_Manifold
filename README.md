@@ -89,6 +89,7 @@ The way we're going to deal with the lobotimization problem is actually somewhat
 Instead, we can look back at our adjacency matrix representation, and consider the three separate chunks of neurons: inputs, outputs, and computational neurons.  Instead of enforcing the flow conservation on an individual level, we can enforce it on a much larger level, and it will behave the same.  So in other words, we just need to sum the "strength" of each connection starting from an input node and terminating in a computational node, and subtract from that the sum of the "strength" of each connection starting from a computational node and terminating in an output node.  That way, if a substantial difference begins to form there, the power line's "cable" will begin to grow "hot" (ie: the loss term describing the delta will increase), and the network will know that it needs to attend to that.  Of course, if your learning rate is too high and your network is especially small, its probably possible for the network to just explosively lobotimize itself in a single step anyways.  For all reasonable purposes though, this solution seems to work well.
 
 ![flow conservation](https://i.imgur.com/mOhH218.png)
+
 *Above: The general scheme of the flow regularization.  Yellow regions cancel out.*
 
 We're going to make this more interesting now.  Remember how we introduced a cutoff threshold?  So as to introduce sparsity into the network?  Well now that we have our dynamic network structure set up, we can get creative.  What sort of network would you design if lives were on the line, and you needed to be completely confident that a given prediction was correct, and you dont care how long it takes to get that answer?  What sort of network would you design if you needed predictions that only had to be "good enough", but you needed them _fast_.  There is an obvious tradeoff between accuracy and speed.  
@@ -176,12 +177,15 @@ sparsity loss coefficient: 10^-1
 [![Dynamic Neural Manifold - toy dataset](http://i.imgur.com/M4v5HUb.png)](https://youtu.be/DD2QYcanyc4 "Dynamic Neural Manifold - toy dataset")
 
 ![Objective loss](https://i.imgur.com/LSXi2vd.png)
+
 *Above: The objective loss (mean squared error) over the training cycle*
     
 ![Flow loss](https://i.imgur.com/WR2kmeu.png)
+
 *Above: Flow loss of the network over the training cycle*
     
 ![sparsity loss](https://i.imgur.com/wkBrbXr.png)
+
 *Above: sparsity loss of the network over the training cycle*
 
 
@@ -227,11 +231,13 @@ sparsity loss coefficient: 10^-1
 [![Dynamic Neural Manifold - mnist](http://i.imgur.com/DqVYhFY.png)](https://youtu.be/pGY5WF2VHV8 "Dynamic Neural Manifold - mnist")
 
 ![accuracy on test set](https://i.imgur.com/TTp3sL9.png)
+
 _accuracy on test set_
 
 final accuracy: 98%
 
 ![sparsity loss term](https://i.imgur.com/swpCH4B.png)
+
 _sparsity loss term_
 
 final sparsity: 3%
