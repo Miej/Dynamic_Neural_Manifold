@@ -54,18 +54,22 @@ No output neuron connects to another output neuron.  Rather, they will simply pr
 With those constraints, we've limited the number of cells in our adjacency matrix representation that we need to consider just a little more, and we are left with a total number of cells equal to: (n_neurons^2 - n_inputs^2 - n_outputs^2 - n_computational) / 2
 
 ![Image of our neural net](https://i.imgur.com/5YlDbiw.png)
+
 _Above: The general regions of the neural net's adjacency matrix representation.  Note- input and output regions are also unused._
 
 
 Next, we're going to define a function for each non-input neuron, and apply it to the adjacency matrix row-wise.  This is a little arbitrary.  Essentially, the closer two connected neurons are, the greater the signal that would otherwise pass between them.  In my code, I've opted to use a function of the form of a sin function raised to some power, and multiplied by a gaussian function.  The goal is simply to create a sort of holography or dimensionality reduction of the n^2 cells in the adjacency matrix.  That will represent our 'closeness' values, which we will then consider to be proportional to a "strength", and then multiply that value by the typical sigmoid(wx+b) activation of each neuron.  I'll explain the rationale for that choice of function.
 
 ![closeness functions](https://i.imgur.com/ILRrm9p.png)
+
 *Above: The general form of the "Closeness" function*
 
 ![closeness functions](https://i.imgur.com/ONBIKSs.png)
+
 *Above: The "Closeness" functions applied neuron-wise to the adjacency matrix, with random noise in the parameters*
 
 ![closeness functions](https://i.imgur.com/MVsgJPX.png)
+
 *Above: The "Closeness" functions applied neuron-wise to the adjacency matrix, with unused regions trimmed out*
 
 A huge use case for neural networks is processing images.  But if our adjacency matrix is in a way defining the relationship between specific-index data points, then the best we could do with just gaussian functions is to describe 1-dimensional images.  However, if we then include a sin component, we can set the period of the sin function to be the width of the given images, and we will essentially be left with a (not quite perfect, but usable) 2-dimensional gaussian function for a given point in an image.  Then, raising the sin fucntion to some power just allows us (or rather, the network) to tweak the curvature of the peaks.  So now we can feasibly have neurons that are specifc to particular regions in a given image, decreasing the magnitude of their inputs as one looks radially further from a given point.
