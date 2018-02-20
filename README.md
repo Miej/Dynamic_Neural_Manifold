@@ -6,7 +6,7 @@ release date: 2/19/18
 
 [![Dynamic Neural Manifold - toy dataset](http://i.imgur.com/M4v5HUb.png)](https://youtu.be/DD2QYcanyc4 "Dynamic Neural Manifold - toy dataset")
 
-In this project, I've built a neural network architecture with a static execution graph that acts as a dynamic neural network in which connections between various neurons are controlled by the network itself. This is accomplished by manipulating the adjacency matrix representation of the network on a per-neuron basis with cell elements representing a 'distance', and masking off connections that are within a threshold. Including a loss term based on the networks sparcity or processing time allows the architecture to optimize its structure for accuracy or speed.
+In this project, I've built a neural network architecture with a static execution graph that acts as a dynamic neural network in which connections between various neurons are controlled by the network itself. This is accomplished by manipulating the adjacency matrix representation of the network on a per-neuron basis with cell elements representing a 'distance', and masking off connections that are within a threshold. Including a loss term based on the networks sparsity or processing time allows the architecture to optimize its structure for accuracy or speed.
 
 ## Intro
 Alright, so hopefully I've caught your attention with the title.  To begin, I'd like to explain a little behind why I've created this.
@@ -43,7 +43,7 @@ _Above: an example of a maximally-connected DAG and its corresponding adjacency 
 
 In this case, we are considering each individual neuron in our neural network to occupy a single index in our adjacency matrix representation.  DAGs with only 0 or 1 values are very useful for defining whether there is a connection between two nodes (or in this case, neurons), but I was interested in having the neural network be able to modify its own structure, and having a flat function with a single step is not particularly conducive to generating smooth gradients.  So instead, (and admittedly a little inspired by the wrinkly structure of the brain), I choose to rather define the absolute value of the elements in the adjacency matrix within the range [0,1], and consider it to describe a measure of "closeness", such that a value of 1 would represent two nodes (neurons) that have zero distance between each other, and a value of 0 would represent two neurons with infinite distance between each other.  This is helpful, but not sufficient.
 
-Another important consideration is that we want to find a way to enforce sparcity in our neural network in order to (ideally) limit the computational complexity, so along with our analog 'closeness' values in the adjacency matrix, we will also define a global threshold or cutoff value, below which we consider any 'closeness' values to be essentially zero.
+Another important consideration is that we want to find a way to enforce sparsity in our neural network in order to (ideally) limit the computational complexity, so along with our analog 'closeness' values in the adjacency matrix, we will also define a global threshold or cutoff value, below which we consider any 'closeness' values to be essentially zero.
 
 Now let's be a little more specific about the neurons we are using.  Our network structure will contain three separate "types" of neurons:  input neurons, output neurons, and computational neurons.  And we will subject them to the following constraints -
 
@@ -87,21 +87,21 @@ Instead, we can look back at our adjacency matrix representation, and consider t
 ![flow conservation](https://i.imgur.com/mOhH218.png)
 *Above: The general scheme of the flow regularization.  Yellow regions cancel out.*
 
-We're going to make this more interesting now.  Remember how we introduced a cutoff threshold?  So as to introduce sparcity into the network?  Well now that we have our dynamic network structure set up, we can get creative.  What sort of network would you design if lives were on the line, and you needed to be completely confident that a given prediction was correct, and you dont care how long it takes to get that answer?  What sort of network would you design if you needed predictions that only had to be "good enough", but you needed them _fast_.  There is an obvious tradeoff between accuracy and speed.  
+We're going to make this more interesting now.  Remember how we introduced a cutoff threshold?  So as to introduce sparsity into the network?  Well now that we have our dynamic network structure set up, we can get creative.  What sort of network would you design if lives were on the line, and you needed to be completely confident that a given prediction was correct, and you dont care how long it takes to get that answer?  What sort of network would you design if you needed predictions that only had to be "good enough", but you needed them _fast_.  There is an obvious tradeoff between accuracy and speed.  
 
 Time for our next caveat.  Tensorflow currently has several sparse tensor methods, however, there are several specific ops that as of yet do not support gradients, despite their dense counterparts successfully doing so.  Trust me, I built out the entire sparse implementation of this network, only to spend a week or two tracking down the reason why despite all efforts, it still wouldn't work.  I'm looking at you, tf.sparse_concat() . Caveat over.
 
-So even though we can't yet get as tricky as we want to with our next loss term, we can still approximate it.  In a perfect world, Tensorflow's sparse tensor ops would support gradients, and we would measure the amount of time it takes to process a single training step (via time.process_time() ), and use that to build another term in our loss function.  The result of this would be that the network would be able to adjust its own structure _based on the hardware it is being run on_ in order to optimize the mentioned trade-off between speed and accuracy.  But since that's not available yet (and I haven't built it into the source code yet), we're going to make an approximation so that we can _simulate_ what sort of effects it would have.  To do that, we're simply going to count the number of elements in our "closeness" adjacency matrix with non-zero values and divide that by the total number of elements available, thus producing a value representing how sparsely populated the DAG neural net is as a percentage.  Explicitly, the approximation we're making is that in a fully-sparse implementation, there would be a linear relationship between the sparcity of the adjacency matrix and the time required to process a single step, which is almost certainly false, but useful enough for now.
+So even though we can't yet get as tricky as we want to with our next loss term, we can still approximate it.  In a perfect world, Tensorflow's sparse tensor ops would support gradients, and we would measure the amount of time it takes to process a single training step (via time.process_time() ), and use that to build another term in our loss function.  The result of this would be that the network would be able to adjust its own structure _based on the hardware it is being run on_ in order to optimize the mentioned trade-off between speed and accuracy.  But since that's not available yet (and I haven't built it into the source code yet), we're going to make an approximation so that we can _simulate_ what sort of effects it would have.  To do that, we're simply going to count the number of elements in our "closeness" adjacency matrix with non-zero values and divide that by the total number of elements available, thus producing a value representing how sparsely populated the DAG neural net is as a percentage.  Explicitly, the approximation we're making is that in a fully-sparse implementation, there would be a linear relationship between the sparsity of the adjacency matrix and the time required to process a single step, which is almost certainly false, but useful enough for now.
 
 Last but not least, we do need to include a term for the actual proper loss function we want to use for comparing the predictions of the network to the objectives, be that a MSE, or a cross entropy, or whatever.  
 
-So finally we have our loss function, which has three terms: the objective loss, the flow loss, and the sparcity loss.  And in order to tweak the balance between (simulated) speed and accuracy, we can simply multiply the three terms by different, user-defined coefficients in order to represent the relative "importance" of each one.  The objective loss represents the importance of the accuracy, the sparcity loss represents the importance of the (simulated) speed, and I think the flow loss is best understood to be how much flexibility the network is given in terms of adjusting its structure (ie: too low and the net might lobotimize itself, too high and it simply wont pay attention to learning the objective)
+So finally we have our loss function, which has three terms: the objective loss, the flow loss, and the sparsity loss.  And in order to tweak the balance between (simulated) speed and accuracy, we can simply multiply the three terms by different, user-defined coefficients in order to represent the relative "importance" of each one.  The objective loss represents the importance of the accuracy, the sparsity loss represents the importance of the (simulated) speed, and I think the flow loss is best understood to be how much flexibility the network is given in terms of adjusting its structure (ie: too low and the net might lobotimize itself, too high and it simply wont pay attention to learning the objective)
 
 And that's about it.  If you've followed along, you should now have an understanding the general concepts that drive this network architecture.  I've gone ahead and included a few examples of the network processing simple datasets in order to demonstrate that it is in fact capable of creating performant models, even though I recognize that it does not necessarily come close to the current state-of-the-art in terms of either speed nor accuracy.
 
 ## Notes
 
-- It is in fact possible to still use a time.process_time() based loss even with the dense tensor implementation, and perhaps it might even lead to some interesting results along the lines of this (very cool) article: https://www.damninteresting.com/on-the-origin-of-circuits/  . That said, I haven't observed particularly interesting results from using it yet myself, except that comparing the % sparcity loss to the time loss reveals some structure, which allows us to speculate at optimizations in the source code for processing the network's calculations
+- It is in fact possible to still use a time.process_time() based loss even with the dense tensor implementation, and perhaps it might even lead to some interesting results along the lines of this (very cool) article: https://www.damninteresting.com/on-the-origin-of-circuits/  . That said, I haven't observed particularly interesting results from using it yet myself, except that comparing the % sparsity loss to the time loss reveals some structure, which allows us to speculate at optimizations in the source code for processing the network's calculations
 
 
 - These sort of models aren't necessarily meant to serve as state-of-the-art production-status implementations, since as I mentioned a few times, they have some significant limitations in terms of space/time efficiency.  But that said, I do find the architecture to be an interesting way of creating a somewhat generalized approach to applying neural networks to arbitrary problem domains.  Additionally, due to its nature, it is capable of defining network structures of far greater complexity that would be feasible to do by hand with a layer-based approach.  Obviously, this doesn't really do us any favors in terms of interpreting the structures present in the network, but then again...that's sort of fun in its own way.
@@ -111,7 +111,7 @@ And that's about it.  If you've followed along, you should now have an understan
 
 ## Future directions
 
-- Well for one, it would be neat to finally have a working, fully sparse implementation of this in order to be able to utilize a process_time -based loss, instead of just simulating it with a sparcity loss.
+- Well for one, it would be neat to finally have a working, fully sparse implementation of this in order to be able to utilize a process_time -based loss, instead of just simulating it with a sparsity loss.
 
 
 - In the provided code, the neurons are the simplest sigmoid(wx+b) feed-forward type.  It would be relatively trivial to convert them into lstm neurons.
@@ -167,7 +167,7 @@ Objective loss coefficient: 10^4
 
 Flow loss coefficient: 10^0
 
-Sparcity loss coefficient: 10^-1
+sparsity loss coefficient: 10^-1
 
 [![Dynamic Neural Manifold - toy dataset](http://i.imgur.com/M4v5HUb.png)](https://youtu.be/DD2QYcanyc4 "Dynamic Neural Manifold - toy dataset")
 
@@ -177,8 +177,8 @@ Sparcity loss coefficient: 10^-1
 ![Flow loss](https://i.imgur.com/WR2kmeu.png)
 *Above: Flow loss of the network over the training cycle*
     
-![Sparcity loss](https://i.imgur.com/wkBrbXr.png)
-*Above: Sparcity loss of the network over the training cycle*
+![sparsity loss](https://i.imgur.com/wkBrbXr.png)
+*Above: sparsity loss of the network over the training cycle*
 
 
 ##### Notes
@@ -189,7 +189,7 @@ Sparcity loss coefficient: 10^-1
 - As evidenced in the flow loss graph, the network is able to temporarily incur additional loss from flow inequality if it means the network will find a more favorable state.
 
 
-- The sparcity of the network seems to begin too low for the given dataset, leading it to increase its computational complexity(-ish) in order to better optimize the objective loss.
+- The sparsity of the network seems to begin too low for the given dataset, leading it to increase its computational complexity(-ish) in order to better optimize the objective loss.
 
 ## Dataset: mnist
 
@@ -218,7 +218,7 @@ Objective loss coefficient: 10^3
 
 Flow loss coefficient: 10^-4
 
-Sparcity loss coefficient: 10^-1
+sparsity loss coefficient: 10^-1
 
 [![Dynamic Neural Manifold - mnist](http://i.imgur.com/DqVYhFY.png)](https://youtu.be/pGY5WF2VHV8 "Dynamic Neural Manifold - mnist")
 
@@ -227,10 +227,10 @@ _accuracy on test set_
 
 final accuracy: 98%
 
-![sparcity loss term](https://i.imgur.com/swpCH4B.png)
-_sparcity loss term_
+![sparsity loss term](https://i.imgur.com/swpCH4B.png)
+_sparsity loss term_
 
-final sparcity: 3%
+final sparsity: 3%
 
 ##### Notes
 
@@ -240,7 +240,7 @@ final sparcity: 3%
 - Early into the training, about a quarter of the way into it, the network exhibits a sudden shift in its connectivity / neuron "distances".  Why?  How?  I don't know.
 
 
-- Near the end of the training cycle, the accuracy has begun to level off in the realm of high-90% accuracy, while the sparcity loss term is still steadily decreasing.  I think this is neat.  It shows that the network is able to essentially trim neuronal connections that do not contribute significantly to the end-predictions.  Or it is replacing them by building that knowledge into other existing connections.  I don't know.
+- Near the end of the training cycle, the accuracy has begun to level off in the realm of high-90% accuracy, while the sparsity loss term is still steadily decreasing.  I think this is neat.  It shows that the network is able to essentially trim neuronal connections that do not contribute significantly to the end-predictions.  Or it is replacing them by building that knowledge into other existing connections.  I don't know.
 
 
 Cheers.  Feel free to get in contact if you enjoyed this project.  
