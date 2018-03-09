@@ -1,4 +1,6 @@
-# Dynamic Neural Manifold --or-- Dynamic Neural Networks in Tensorflow
+# The Dynamic Neural Manifold architecture 
+--or-- 
+# Dynamic Neural Networks in Tensorflow
 
 Author: Mark Woods ( mark.woods89@gmail.com )
 
