@@ -256,7 +256,6 @@ final sparsity: 3%
 
 
 Cheers.  Feel free to get in contact if you enjoyed this project.  
-I am currently seeking employment, and I'd especially love to move back to NYC.  It's an amazing city.
 
 -Mark Woods
 
