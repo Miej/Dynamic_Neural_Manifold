@@ -2,7 +2,7 @@
 --or-- 
 # Dynamic Neural Networks in Tensorflow
 
-Author: Mark Woods ( mark.woods89@gmail.com )
+Author: Melissa Woods ( me@miej.net )
 
 release date: 2/19/18
 
